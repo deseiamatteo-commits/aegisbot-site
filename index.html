@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AegisBot — Le bot Discord de modération</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #080b14;
+    --bg2: #0d1120;
+    --card: #111827;
+    --border: #1e2d45;
+    --accent: #5865f2;
+    --accent2: #57f287;
+    --accent3: #fee75c;
+    --text: #e8eaf6;
+    --muted: #7289a0;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    overflow-x: hidden;
+  }
+
+  /* ── BACKGROUND ── */
+  .bg-grid {
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(88,101,242,.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(88,101,242,.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .bg-glow {
+    position: fixed;
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(88,101,242,.12) 0%, transparent 70%);
+    top: -150px;
+    left: -100px;
+    pointer-events: none;
+    z-index: 0;
+    animation: floatGlow 8s ease-in-out infinite;
+  }
+
+  .bg-glow2 {
+    position: fixed;
+    width: 500px;
+    height: 500px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(87,242,135,.08) 0%, transparent 70%);
+    bottom: -100px;
+    right: -100px;
+    pointer-events: none;
+    z-index: 0;
+    animation: floatGlow 10s ease-in-out infinite reverse;
+  }
+
+  @keyframes floatGlow {
+    0%, 100% { transform: translate(0,0); }
+    50% { transform: translate(30px, 20px); }
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(8,11,20,.7);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.3rem;
+    color: var(--text);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .nav-logo span {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent), #7b68ee);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 32px;
+    list-style: none;
+  }
+
+  .nav-links a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: .9rem;
+    font-weight: 500;
+    transition: color .2s;
+  }
+
+  .nav-links a:hover { color: var(--text); }
+
+  .nav-cta {
+    background: var(--accent);
+    color: #fff !important;
+    padding: 8px 20px;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: background .2s, transform .2s !important;
+  }
+
+  .nav-cta:hover { background: #4752c4 !important; transform: translateY(-1px); }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 120px 24px 80px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(88,101,242,.12);
+    border: 1px solid rgba(88,101,242,.3);
+    color: #8b95f5;
+    padding: 6px 16px;
+    border-radius: 100px;
+    font-size: .8rem;
+    font-weight: 500;
+    margin-bottom: 28px;
+    animation: fadeUp .6s ease both;
+  }
+
+  .hero-badge::before {
+    content: '';
+    width: 8px; height: 8px;
+    background: var(--accent2);
+    border-radius: 50%;
+    animation: pulse 2s ease infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: .5; transform: scale(1.3); }
+  }
+
+  .hero h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2.8rem, 8vw, 6rem);
+    font-weight: 800;
+    line-height: 1.05;
+    margin-bottom: 24px;
+    animation: fadeUp .6s .1s ease both;
+  }
+
+  .hero h1 .gradient {
+    background: linear-gradient(135deg, var(--accent) 0%, #9b8fff 50%, var(--accent2) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .hero p {
+    font-size: clamp(1rem, 2.5vw, 1.2rem);
+    color: var(--muted);
+    max-width: 560px;
+    line-height: 1.7;
+    margin-bottom: 40px;
+    animation: fadeUp .6s .2s ease both;
+  }
+
+  .hero-btns {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+    animation: fadeUp .6s .3s ease both;
+  }
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--accent);
+    color: #fff;
+    text-decoration: none;
+    padding: 14px 32px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: transform .2s, box-shadow .2s, background .2s;
+    box-shadow: 0 4px 24px rgba(88,101,242,.35);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 32px rgba(88,101,242,.5);
+    background: #4752c4;
+  }
+
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: transparent;
+    color: var(--text);
+    text-decoration: none;
+    padding: 14px 32px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 1rem;
+    border: 1px solid var(--border);
+    transition: transform .2s, border-color .2s, background .2s;
+  }
+
+  .btn-secondary:hover {
+    transform: translateY(-3px);
+    border-color: var(--accent);
+    background: rgba(88,101,242,.06);
+  }
+
+  /* ── STATS ── */
+  .stats-bar {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: center;
+    gap: 60px;
+    flex-wrap: wrap;
+    padding: 40px 24px;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    background: rgba(13,17,32,.6);
+    animation: fadeUp .6s .4s ease both;
+  }
+
+  .stat {
+    text-align: center;
+  }
+
+  .stat-number {
+    font-family: 'Syne', sans-serif;
+    font-size: 2rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .stat-label {
+    font-size: .85rem;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* ── SECTIONS ── */
+  section {
+    position: relative;
+    z-index: 1;
+    padding: 100px 24px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .section-tag {
+    display: inline-block;
+    font-size: .75rem;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 800;
+    margin-bottom: 16px;
+    line-height: 1.15;
+  }
+
+  .section-sub {
+    color: var(--muted);
+    font-size: 1.05rem;
+    line-height: 1.7;
+    max-width: 540px;
+    margin-bottom: 56px;
+  }
+
+  /* ── FEATURES ── */
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+  }
+
+  .feature-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    transition: transform .25s, border-color .25s, box-shadow .25s;
+    cursor: default;
+  }
+
+  .feature-card:hover {
+    transform: translateY(-6px);
+    border-color: rgba(88,101,242,.4);
+    box-shadow: 0 12px 40px rgba(88,101,242,.12);
+  }
+
+  .feature-icon {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    margin-bottom: 18px;
+  }
+
+  .icon-blue { background: rgba(88,101,242,.15); }
+  .icon-green { background: rgba(87,242,135,.12); }
+  .icon-yellow { background: rgba(254,231,92,.12); }
+  .icon-red { background: rgba(237,66,69,.12); }
+  .icon-purple { background: rgba(155,104,255,.12); }
+  .icon-pink { background: rgba(235,69,158,.12); }
+
+  .feature-card h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+
+  .feature-card p {
+    color: var(--muted);
+    font-size: .9rem;
+    line-height: 1.65;
+  }
+
+  /* ── COMMANDS ── */
+  .commands-wrapper {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 12px;
+  }
+
+  .cmd-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    transition: border-color .2s, transform .2s;
+  }
+
+  .cmd-card:hover {
+    border-color: rgba(88,101,242,.4);
+    transform: translateX(4px);
+  }
+
+  .cmd-name {
+    font-family: 'DM Mono', 'Courier New', monospace;
+    font-size: .9rem;
+    color: var(--accent2);
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  .cmd-desc {
+    font-size: .82rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .cmd-badge {
+    display: inline-block;
+    font-size: .68rem;
+    padding: 2px 8px;
+    border-radius: 100px;
+    margin-top: 8px;
+    font-weight: 600;
+  }
+
+  .badge-admin {
+    background: rgba(237,66,69,.15);
+    color: #ed4245;
+  }
+
+  .badge-fun {
+    background: rgba(254,231,92,.12);
+    color: var(--accent3);
+  }
+
+  .badge-all {
+    background: rgba(87,242,135,.12);
+    color: var(--accent2);
+  }
+
+  /* ── SETUP ── */
+  .setup-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-width: 680px;
+  }
+
+  .step {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 24px;
+    transition: border-color .2s;
+  }
+
+  .step:hover { border-color: rgba(88,101,242,.4); }
+
+  .step-num {
+    min-width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent), #7b68ee);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: .9rem;
+    color: #fff;
+    flex-shrink: 0;
+  }
+
+  .step h4 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .step p {
+    color: var(--muted);
+    font-size: .88rem;
+    line-height: 1.6;
+  }
+
+  code {
+    background: rgba(88,101,242,.12);
+    color: #8b95f5;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: .83em;
+    font-family: 'Courier New', monospace;
+  }
+
+  /* ── CTA BANNER ── */
+  .cta-banner {
+    position: relative;
+    z-index: 1;
+    background: linear-gradient(135deg, rgba(88,101,242,.15), rgba(87,242,135,.08));
+    border: 1px solid rgba(88,101,242,.25);
+    border-radius: 24px;
+    padding: 60px 40px;
+    text-align: center;
+    margin: 0 24px 100px;
+    overflow: hidden;
+    max-width: 1052px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .cta-banner::before {
+    content: '';
+    position: absolute;
+    top: -80px; left: 50%;
+    transform: translateX(-50%);
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(88,101,242,.2) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .cta-banner h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    font-weight: 800;
+    margin-bottom: 16px;
+  }
+
+  .cta-banner p {
+    color: var(--muted);
+    margin-bottom: 32px;
+    font-size: 1rem;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: 32px 24px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: .85rem;
+  }
+
+  footer a { color: var(--accent); text-decoration: none; }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity .6s ease, transform .6s ease;
+  }
+
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 600px) {
+    nav { padding: 14px 20px; }
+    .nav-links { display: none; }
+    .stats-bar { gap: 32px; }
+    .cta-banner { padding: 40px 24px; margin: 0 16px 60px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-glow"></div>
+<div class="bg-glow2"></div>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">
+    <div class="logo-icon">🛡️</div>
+    <span>AegisBot</span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#fonctionnalites">Fonctionnalités</a></li>
+    <li><a href="#commandes">Commandes</a></li>
+    <li><a href="#setup">Setup</a></li>
+    <li><a href="https://discord.gg/TMMRrFbGMJ" class="nav-cta">Ajouter le bot</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-badge">✨ Version 1.0 disponible</div>
+  <h1>Le bot Discord qui<br/><span class="gradient">protège ton serveur</span></h1>
+  <p>AegisBot surveille automatiquement tes salons, gère les infractions et anime ta communauté avec des mini-jeux fun.</p>
+  <div class="hero-btns">
+    <a href="https://discord.com/oauth2/authorize?client_id=1497276489681604751&permissions=8&scope=bot%20applications.commands" class="btn-primary">
+      🚀 Ajouter à mon serveur
+    </a>
+    <a href="#fonctionnalites" class="btn-secondary">
+      Voir les fonctionnalités →
+    </a>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats-bar">
+  <div class="stat">
+    <div class="stat-number">3</div>
+    <div class="stat-label">Niveaux d'avertissements</div>
+  </div>
+  <div class="stat">
+    <div class="stat-number">10+</div>
+    <div class="stat-label">Commandes disponibles</div>
+  </div>
+  <div class="stat">
+    <div class="stat-number">100%</div>
+    <div class="stat-label">Gratuit</div>
+  </div>
+  <div class="stat">
+    <div class="stat-number">⚡</div>
+    <div class="stat-label">Toujours en ligne</div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section id="fonctionnalites">
+  <div class="reveal">
+    <span class="section-tag">Fonctionnalités</span>
+    <h2 class="section-title">Tout ce dont ton serveur a besoin</h2>
+    <p class="section-sub">Un bot complet créé avec soin pour garder ton serveur organisé et fun.</p>
+  </div>
+  <div class="features-grid reveal">
+    <div class="feature-card">
+      <div class="feature-icon icon-blue">🛡️</div>
+      <h3>Modération automatique</h3>
+      <p>AegisBot surveille les salons en temps réel et supprime automatiquement les messages au mauvais endroit.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon icon-red">⚠️</div>
+      <h3>Système d'avertissements</h3>
+      <p>3 niveaux progressifs : avertissement en MP, 2ème alerte, puis exclusion automatique de 10 minutes.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon icon-green">⚙️</div>
+      <h3>Configuration flexible</h3>
+      <p>Configure tes salons directement avec <code>/setup</code> sans toucher au code. Chaque serveur a ses propres paramètres.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon icon-yellow">🎮</div>
+      <h3>Mini-jeux fun</h3>
+      <p>8ball, pile ou face, dé, compteur d'amour… De quoi animer ta communauté entre deux modérations.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon icon-purple">📋</div>
+      <h3>Suivi des infractions</h3>
+      <p>Consulte et gère les avertissements de chaque membre avec <code>/voir_warnings</code> et <code>/reset</code>.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon icon-pink">💬</div>
+      <h3>MP automatiques</h3>
+      <p>Les membres sont notifiés en message privé lors d'une infraction, pour une modération discrète et respectueuse.</p>
+    </div>
+  </div>
+</section>
+
+<!-- COMMANDES -->
+<section id="commandes" style="padding-top:0">
+  <div class="reveal">
+    <span class="section-tag">Commandes</span>
+    <h2 class="section-title">Toutes les commandes slash</h2>
+    <p class="section-sub">Toutes les commandes utilisent le système de slash commands de Discord.</p>
+  </div>
+  <div class="commands-wrapper reveal">
+    <div class="cmd-card">
+      <div class="cmd-name">/setup</div>
+      <div class="cmd-desc">Configure un salon de ton serveur (commandes, boutique, pseudo)</div>
+      <span class="cmd-badge badge-admin">Admin</span>
+    </div>
+    <div class="cmd-card">
+      <div class="cmd-name">/voir_config</div>
+      <div class="cmd-desc">Affiche la configuration actuelle du serveur</div>
+      <span class="cmd-badge badge-admin">Admin</span>
+    </div>
+    <div class="cmd-card">
+      <div class="cmd-name">/voir_warnings</div>
+      <div class="cmd-desc">Affiche la liste de toutes les infractions enregistrées</div>
+      <span class="cmd-badge badge-admin">Admin</span>
+    </div>
+    <div class="cmd-card">
+      <div class="cmd-name">/reset [membre]</div>
+      <div class="cmd-desc">Remet à zéro les infractions d'un membre ou du serveur entier</div>
+      <span class="cmd-badge badge-admin">Admin</span>
+    </div>
+    <div class="cmd-card">
+      <div class="cmd-name">/dire [texte]</div>
+      <div class="cmd-desc">Fait parler le bot dans le salon actuel</div>
+      <span class="cmd-badge badge-admin">Admin</span>
+    </div>
+    <div class="cmd-card">
+      <div class="cmd-name">/ping</div>
+      <div class="cmd-desc">Vérifie la latence du bot en millisecondes</div>
+      <span class="cmd-badge badge-all">Tous</span>
+    </div>
+    <div class="cmd-card">
+      <div class="cmd-name">/8ball [question]</div>
+      <div class="cmd-desc">Pose une question à la boule magique 🎱</div>
+      <span class="cmd-badge badge-fun">Fun</span>
+    </div>
+    <div class="cmd-card">
+      <div class="cmd-name">/pileouface</div>
+      <div class="cmd-desc">Joue à pile ou face 🪙</div>
+      <span class="cmd-badge badge-fun">Fun</span>
+    </div>
+    <div class="cmd-card">
+      <div class="cmd-name">/de</div>
+      <div class="cmd-desc">Lance un dé à 6 faces 🎲</div>
+      <span class="cmd-badge badge-fun">Fun</span>
+    </div>
+    <div class="cmd-card">
+      <div class="cmd-name">/love [membre]</div>
+      <div class="cmd-desc">Calcule ton pourcentage d'amour avec quelqu'un 💖</div>
+      <span class="cmd-badge badge-fun">Fun</span>
+    </div>
+  </div>
+</section>
+
+<!-- SETUP -->
+<section id="setup" style="padding-top:0">
+  <div class="reveal">
+    <span class="section-tag">Démarrage rapide</span>
+    <h2 class="section-title">Opérationnel en 2 minutes</h2>
+    <p class="section-sub">Suis ces étapes après avoir ajouté le bot à ton serveur.</p>
+  </div>
+  <div class="setup-steps reveal">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div>
+        <h4>Ajouter le bot à ton serveur</h4>
+        <p>Clique sur le bouton "Ajouter à mon serveur" et sélectionne ton serveur Discord. Accepte les permissions demandées.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div>
+        <h4>Configurer le salon des commandes</h4>
+        <p>Tape <code>/setup</code> → sélectionne <strong>💬 Salon Commandes</strong> → mentionne ton salon.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div>
+        <h4>Configurer les autres salons (optionnel)</h4>
+        <p>Répète <code>/setup</code> pour configurer le salon boutique et le salon pseudo si tu en as.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div>
+        <h4>Vérifier la configuration</h4>
+        <p>Utilise <code>/voir_config</code> pour t'assurer que tout est bien configuré. C'est parti ! 🚀</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<div class="cta-banner reveal">
+  <h2>Prêt à protéger ton serveur ?</h2>
+  <p>Gratuit, sans inscription. Ajoute AegisBot en un clic.</p>
+  <a href="https://discord.com/oauth2/authorize?client_id=1497276489681604751&permissions=8&scope=bot%20applications.commands" class="btn-primary" style="display:inline-flex">
+    🚀 Ajouter AegisBot gratuitement
+  </a>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <p>Fait avec ❤️ par <strong>Mattéo</strong> · <a href="https://discord.gg/TMMRrFbGMJ">Support Discord</a> · <a href="https://top.gg/bot/1497276489681604751">top.gg</a></p>
+</footer>
+
+<script>
+  // Scroll reveal
+  const reveals = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach((e, i) => {
+      if (e.isIntersecting) {
+        setTimeout(() => e.target.classList.add('visible'), i * 80);
+      }
+    });
+  }, { threshold: 0.1 });
+  reveals.forEach(r => observer.observe(r));
+</script>
+</body>
+</html>
